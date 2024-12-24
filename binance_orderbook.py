@@ -2,9 +2,9 @@ import time
 import requests
 import pandas as pd
 from datetime import datetime
-import os
+import concurrent.futures
 
-name_exchange = "Binance"
+name_exchange = "binance"
 symbols = ["BTCUSDT", "ETHUSDT"]
 proxies = {
     'http': 'socks5://127.0.0.1:2080',
@@ -15,82 +15,79 @@ proxies = {
 def fetch_order_book(symbol):
     url = f"https://api.binance.com/api/v3/depth?limit=10&symbol={symbol}"
     try:
-        response = requests.get(url, proxies=proxies)  # Use proxies here
+        response = requests.get(url, proxies=proxies)
         response.raise_for_status()
-        return response.json()
+        return symbol, response.json()
     except requests.RequestException as e:
         print(f"Failed to fetch data for {symbol}: {e}")
-        return None
+        return symbol, None
 
 
 def save_data(data, name_exchange, symbol):
     today_date = datetime.today().strftime('%Y-%m-%d')
-    filename = f'OrderBookDataInternational/order_book_data_{name_exchange.lower()}_{today_date}_{symbol}.csv'
-
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-
-    df = pd.DataFrame(data)
-    df.to_csv(filename, mode='a', header=not os.path.exists(filename), index=False)
-    print(f"Data saved to {filename}")
+    filename = f'order_book_data/{name_exchange.lower()}/order_book_{name_exchange.lower()}_{symbol}_{today_date}.csv'
+    data.to_csv(filename, index=False)
 
 
-def gather_data_binance(symbol):
-    data_list = []
+def process_order_book_data(symbol, order_book_data):
+    if order_book_data:
+        max_len = max(len(order_book_data["asks"]), len(order_book_data["bids"]))
+        asks = order_book_data["asks"] + [['', '']] * (max_len - len(order_book_data["asks"]))
+        bids = order_book_data["bids"] + [['', '']] * (max_len - len(order_book_data["bids"]))
 
-    while True:
-        order_book_data = fetch_order_book(symbol)
-        if order_book_data:
-            timestamp = int(time.time())
-            datetime_timestamp = datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+        best_buy = max(float(b[0]) for b in order_book_data["bids"] if b[0])
+        best_sell = min(float(a[0]) for a in order_book_data["asks"] if a[0])
 
-            max_len = max(len(order_book_data["asks"]), len(order_book_data["bids"]))
-            asks = order_book_data["asks"] + [['', '']] * (max_len - len(order_book_data["asks"]))
-            bids = order_book_data["bids"] + [['', '']] * (max_len - len(order_book_data["bids"]))
+        spread = best_sell - best_buy
 
-            best_buy = max(float(b[0]) for b in order_book_data["bids"] if b[0])
-            best_sell = min(float(a[0]) for a in order_book_data["asks"] if a[0])
+        timestamp = datetime.now().timestamp()
+        datetime_str = datetime.now().isoformat()
+        date_str = datetime_str.split("T")[0]
 
-            spread = best_sell - best_buy
+        total_ask_volume = sum(float(a[1]) for a in order_book_data["asks"] if a[1])
+        total_bid_volume = sum(float(b[1]) for b in order_book_data["bids"] if b[1])
 
-            timestamp = datetime.now().timestamp()
-            datetime_str = datetime.now().isoformat()
-            date_str = datetime_str.split("T")[0]
+        iteration_data = pd.DataFrame({
+            "Item": symbol,
+            "Timestamp": timestamp,
+            "DateTime": datetime_str,
+            "Date": date_str,
+            "Ask_Price": [float(a[0]) if a[0] else None for a in asks],
+            "Ask_Volume": [float(a[1]) if a[1] else None for a in asks],
+            "Bid_Price": [float(b[0]) if b[0] else None for b in bids],
+            "Bid_Volume": [float(b[1]) if b[1] else None for b in bids],
+            "Total_Ask_Volume": total_ask_volume,
+            "Total_Bid_Volume": total_bid_volume,
+            "Best_Bid_Price": best_buy,
+            "Best_Ask_Price": best_sell,
+            "Spread": spread
+        })
 
-            iteration_data = pd.DataFrame({
-                "Item": symbol,
-                # "Currency": "USDT",
-                "Timestamp": timestamp,
-                "Ask_Price": [float(a[0]) if a[0] else None for a in asks],
-                "Ask_Volume": [float(a[1]) if a[1] else None for a in asks],
-                "Bid_Price": [float(b[0]) if b[0] else None for b in bids],
-                "Bid_Volume": [float(b[1]) if b[1] else None for b in bids],
-                "DateTime": datetime_str,
-                "Date": date_str,
-                "Best_Bid_Price": best_buy,
-                "Best_Ask_Price": best_sell,
-                "Spread": spread
-            })
+        all_prices = [float(a[0]) for a in order_book_data["asks"] if a[0]] + \
+                     [float(b[0]) for b in order_book_data["bids"] if b[0]]
 
-            all_prices = [float(a[0]) for a in order_book_data["asks"] if a[0]] + \
-                         [float(b[0]) for b in order_book_data["bids"] if b[0]]
-            reference_price = pd.Series(all_prices).median()
-            iteration_data["Reference_Price"] = reference_price
+        reference_price = pd.Series(all_prices).median()
+        iteration_data["Reference_Price"] = reference_price
 
-            data_list.append(iteration_data)
+        iteration_data.drop_duplicates(subset=["Timestamp", "Item"], inplace=True)
 
-            order_book_df = pd.concat(data_list, ignore_index=True)
-            output_dir = f'order_book_data/{name_exchange.lower()}/'
-            os.makedirs(output_dir, exist_ok=True)
-            order_book_df.to_csv(f"{output_dir}order_book_binance_{symbol}_{date_str}.csv", index=False)
-            print(order_book_df)
-
-        time.sleep(15)
+        save_data(iteration_data, name_exchange, symbol)
 
 
 def main():
-    for symbol in symbols:
-        print(f"Fetching data for {symbol}")
-        gather_data_binance(symbol)
+    while True:
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = {executor.submit(fetch_order_book, symbol): symbol for symbol in symbols}
+
+            for future in concurrent.futures.as_completed(futures):
+                symbol = futures[future]
+                try:
+                    symbol, order_book_data = future.result()
+                    process_order_book_data(symbol, order_book_data)
+                except Exception as e:
+                    print(f"An error occurred for {symbol}: {e}")
+
+        time.sleep(15)
 
 
 if __name__ == "__main__":

@@ -1,150 +1,102 @@
-import pandas as pd
-import pytz
-import requests
 import time
+import requests
+import pandas as pd
+from datetime import datetime
+import os
 import concurrent.futures
 
-url_token_mapping = {
-    'BTCUSDT': 'https://api.coinex.com/v1/market/depth?market=btcusdt&merge=0',
-    'ETHUSDT': 'https://api.coinex.com/v1/market/depth?market=ethusdt&merge=0'
+name_exchange = "CoinEx"
+symbols = ["BTCUSDT", "ETHUSDT"]
+proxies = {
+    'http': 'socks5://127.0.0.1:2080',
+    'https': 'socks5://127.0.0.1:2080',
 }
 
-LIST_COLUMN_NAME_INTERCEPT = ['Timestamp', 'DateTime', 'Date', 'Item',
-                              # 'Coins', 'CoinName', 'Currency'
-                              ]
 
-
-def save_csv_orderbook(df, filename):
-    df.to_csv(f'order_book_data/coinex/coinex_orderbook_{filename}.csv', index=False)
-
-
-def convert_to_tehran_time(timestamp_ms):
-    tehran_timezone = pytz.timezone('Asia/Tehran')
-    datetime_utc = pd.to_datetime(timestamp_ms, unit='ms').tz_localize('UTC')
-    datetime_tehran = datetime_utc.tz_convert(tehran_timezone)
-    return datetime_tehran
-
-
-def data_separate(df, split_sign, column_name):
-    df['CoinName'] = df[column_name].str.split(split_sign).str.get(0)
-    df['Currency'] = df[column_name].str.split(split_sign).str.get(1)
-    return df
-
-
-def fetch_market_depth_url(url):
+def fetch_market_depth(symbol):
+    url = f"https://api.coinex.com/v1/market/depth?market={symbol.lower()}&merge=0"
     try:
-        response = requests.get(url)
+        response = requests.get(url, proxies=proxies)
         response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        print(f"An error occurred: {e}")
-        return None
+        return symbol, response.json()
+    except requests.RequestException as e:
+        print(f"Failed to fetch data for {symbol}: {e}")
+        return symbol, None
 
 
-def extract_ask_bid(data):
-    try:
-        asks = data['data']['asks']
-        bids = data['data']['bids']
-        last = data['data']['last']
-        timestamp = data['data']['time']
-        asks_with_type = [(price, quantity, 'ask') for price, quantity in asks]
-        bids_with_type = [(price, quantity, 'bid') for price, quantity in bids]
-        combined_data = asks_with_type + bids_with_type
-        order_book_df = pd.DataFrame(combined_data, columns=['price', 'quantity', 'type'])
-        order_book_df['LastPrice'] = last
-        order_book_df['Timestamp'] = timestamp
-        if not order_book_df.empty:
-            last_update = order_book_df['Timestamp'].iloc[0]
-            order_book_df['DateTime'] = pd.to_datetime(last_update, unit='ms')
-            order_book_df['DateTime'] = order_book_df['DateTime'].apply(convert_to_tehran_time)
-            order_book_df['Date'] = order_book_df['DateTime'].dt.date
-            return order_book_df, last_update
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+def save_data(data, name_exchange, symbol):
+    today_date = datetime.today().strftime('%Y-%m-%d')
+    filename = f'order_book_data/{name_exchange.lower()}/order_book_{name_exchange.lower()}_{symbol}_{today_date}.csv'
 
 
-def calculate_spread_coinx(df):
-    df['Price'] = pd.to_numeric(df['price'])
-    df['Reference_Price'] = pd.to_numeric(df['LastPrice'])
-    buy_df = df[df['type'] == 'bid']
-    sell_df = df[df['type'] == 'ask']
-    highest_buy_price = buy_df['Price'].max()
-    lowest_sell_price = sell_df['Price'].min()
-    spread = lowest_sell_price - highest_buy_price
-    df['Best_Bid_Price'] = highest_buy_price
-    df['Best_Ask_Price'] = lowest_sell_price
-    df['Spread'] = spread
+    existing_data = pd.read_csv(filename)
+    combined_data = pd.concat([existing_data, data], ignore_index=True)
 
-    return df
+    combined_data.to_csv(filename, index=False)
 
 
-def calculate_depth_percent_coinx(df, percentages=[0, 2, 5, 10]):
-    if df.empty:
-        print("The input DataFrame is empty.")
-    else:
-        combined_depth_df = pd.DataFrame(columns=LIST_COLUMN_NAME_INTERCEPT)
-        ALTERNATE_COLUMN_NAME_INTERCEPT = LIST_COLUMN_NAME_INTERCEPT.copy()
-        ALTERNATE_COLUMN_NAME_INTERCEPT.extend(['LowerBond', 'UpperBond'])
+def process_order_book_data(symbol, order_book_data):
+    if order_book_data and "data" in order_book_data and len(order_book_data["data"]) > 0:
+        asks = pd.DataFrame(order_book_data['data']['asks'], columns=["Ask_Price", "Ask_Volume"])
+        bids = pd.DataFrame(order_book_data['data']['bids'], columns=["Bid_Price", "Bid_Volume"])
 
-        def calculate_depth(percentage):
+        asks["Ask_Price"] = pd.to_numeric(asks["Ask_Price"])
+        asks["Ask_Volume"] = pd.to_numeric(asks["Ask_Volume"])
+        bids["Bid_Price"] = pd.to_numeric(bids["Bid_Price"])
+        bids["Bid_Volume"] = pd.to_numeric(bids["Bid_Volume"])
 
-            buy_df = df[df['type'] == 'bid'].copy()
-            sell_df = df[df['type'] == 'ask'].copy()
-            highest_buy_price = buy_df['Price'].max()
-            lowest_sell_price = sell_df['Price'].min()
-            buy_df.loc[:, 'Best_Bid_Price'] = highest_buy_price
-            sell_df.loc[:, 'Best_Ask_Price'] = lowest_sell_price
-            sell_df.loc[:, 'LowerBond'] = sell_df['Best_Ask_Price'] * (1 - (percentage / 100))
-            buy_df.loc[:, 'UpperBond'] = buy_df['Best_Bid_Price'] * (1 + (percentage / 100))
-            df_filtered_buy = buy_df[(buy_df['Price'] <= buy_df['UpperBond'])]
-            df_filtered_sell = sell_df[(sell_df['Price'] >= sell_df['LowerBond'])]
-            depth_df = df_filtered_buy.merge(df_filtered_sell, how='outer')
-            depth_df['Volume_Total'] = depth_df['quantity'].sum()
-            depth_df['Percentage'] = percentage
+        last_price = float(order_book_data['data']['last'])
+        timestamp = int(order_book_data['data']['time'])
+        datetime_str = datetime.utcfromtimestamp(timestamp / 1000).isoformat()
+        date_str = datetime_str.split("T")[0]
 
-            return depth_df
+        total_ask_volume = asks["Ask_Volume"].sum()
+        total_bid_volume = bids["Bid_Volume"].sum()
 
-        depth_dfs = [calculate_depth(percentage) for percentage in percentages]
-        for df in depth_dfs:
-            combined_depth_df = pd.concat([combined_depth_df, df], ignore_index=True)
-        return combined_depth_df
+        best_bid_price = bids["Bid_Price"].max()
+        best_ask_price = asks["Ask_Price"].min()
+        spread = best_ask_price - best_bid_price
+
+        iteration_data = pd.DataFrame({
+            "Item": symbol,
+            "Timestamp": timestamp,
+            "DateTime": datetime_str,
+            "Date": date_str,
+            "Ask_Price": asks["Ask_Price"],
+            "Ask_Volume": asks["Ask_Volume"],
+            "Bid_Price": bids["Bid_Price"],
+            "Bid_Volume": bids["Bid_Volume"],
+            "Total_Ask_Volume": total_ask_volume,
+            "Total_Bid_Volume": total_bid_volume,
+            "Best_Bid_Price": best_bid_price,
+            "Best_Ask_Price": best_ask_price,
+            "Spread": spread,
+            "Reference_Price": last_price
+        })
+
+        iteration_data.drop_duplicates(subset=["Timestamp", "Item"], inplace=True)
+
+        save_data(iteration_data, name_exchange, symbol)
+
+
+def main():
+    while True:
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = {executor.submit(fetch_market_depth, symbol): symbol for symbol in symbols}
+
+            for future in concurrent.futures.as_completed(futures):
+                symbol = futures[future]
+                try:
+                    symbol, order_book_data = future.result()
+                    process_order_book_data(symbol, order_book_data)
+                except Exception as e:
+                    print(f"An error occurred for {symbol}: {e}")
+
+        time.sleep(15)
 
 
 if __name__ == "__main__":
-    df_all_coinex_orderbook = pd.DataFrame()
-    while True:
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = {executor.submit(fetch_market_depth_url, url): token for token, url in url_token_mapping.items()}
-            for future in concurrent.futures.as_completed(futures):
-                token = futures[future]
-                data = future.result()
-                if not data:
-                    continue
-                df, last_update = extract_ask_bid(data)
-                print(token)
-                if not df.empty or df['Timestamp'].notna().any():
-                    df['Item'] = token
-                    # df['Coins'] = f"{token.split('USDT')[0]}_USDT"
-                    # data_separate(df, '_', 'Coins')
-                    df = calculate_spread_coinx(df)
-                    df_all_coinex_orderbook = pd.concat([df_all_coinex_orderbook, df], axis=0)
-
-                    # save_csv_orderbook(df, f'total_orderbook_coinex_{token}_{df["Date"].iloc[0]}_{df["timestamp"].iloc[0]}')
-
-                    spread_df = df[['Item',
-                                    'Timestamp', 'DateTime', 'Date',
-                                    'Best_Bid_Price',
-                                    'Best_Ask_Price',
-                                    'Spread',
-                                    'Reference_Price'
-                                    ]].iloc[0:1, :]
-                    # save_csv_orderbook(spread_df,
-                    #                    f'spread_coinex_{token}_{spread_df["Date"].iloc[0]}_{spread_df["timestamp"].iloc[0]}')
-
-                    df_depth = calculate_depth_percent_coinx(df)
-                    save_csv_orderbook(df_depth, f'depth_coinex_{token}_{df_depth["Date"].iloc[0]}')
-
-                    save_csv_orderbook(df_all_coinex_orderbook,
-                                       f'all_order_book_coinex_{token}_{df_depth["Date"].iloc[0]}')
-
-        time.sleep(15)
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("Data fetching interrupted by user.")

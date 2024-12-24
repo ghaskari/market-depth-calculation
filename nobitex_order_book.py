@@ -53,14 +53,16 @@ def extract_ask_bid(data):
 
 
 def dataset_preparation(result_df):
+    # Fill missing values
     result_df.fillna({'Bid_Price': 0, 'Bid_Volume': 0, 'Ask_Price': 0, 'Ask_Volume': 0, 'LastTradePrice': 0},
                      inplace=True)
     result_df['Reference_Price'] = result_df['LastTradePrice'].astype(float)
     result_df['DateTime'] = pd.to_datetime(result_df['Timestamp'], unit='ms')
-    result_df['DateTime'] = result_df['DateTime'].apply(convert_to_tehran_time)
+    result_df['FormattedDateTime'] = result_df['DateTime'].dt.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
     result_df['Date'] = result_df['DateTime'].dt.date
-    return result_df
+    result_df['DateTime'] = result_df['FormattedDateTime']
 
+    return result_df
 
 def spread_calculation(result_df):
     spread_data = result_df.groupby(LIST_COLUMN_NAME_INTERCEPT).agg(

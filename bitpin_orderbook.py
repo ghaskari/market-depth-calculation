@@ -7,7 +7,7 @@ api_url_btc_usdt_bitpin = "https://api.bitpin.org/api/v1/mth/orderbook/BTC_USDT/
 api_url_eth_usdt_bitpin = "https://api.bitpin.org/api/v1/mth/orderbook/ETH_USDT/"
 
 
-def fetch_orderbook_bitpin(url, token, coin_name, interval_seconds=15, iterations=4):
+def fetch_orderbook_bitpin(url, token, interval_seconds=15, iterations=4):
     data_list = []
     for _ in range(iterations):
         response = requests.get(url)
@@ -28,8 +28,6 @@ def fetch_orderbook_bitpin(url, token, coin_name, interval_seconds=15, iteration
 
             iteration_data = pd.DataFrame({
                 "Item": token,
-                # "CoinName": coin_name,
-                # "Currency": "USDT",
                 "Timestamp": timestamp,
                 "Ask_Price": [float(a[0]) if a[0] else None for a in asks],
                 "Ask_Volume": [float(a[1]) if a[1] else None for a in asks],
@@ -63,8 +61,8 @@ def fetch_orderbook_bitpin(url, token, coin_name, interval_seconds=15, iteration
 
 
 def run_collectors():
-    btc_data = fetch_orderbook_bitpin(api_url_btc_usdt_bitpin, "BTC_USDT", "Bitcoin")
-    eth_data = fetch_orderbook_bitpin(api_url_eth_usdt_bitpin, "ETH_USDT", "Ethereum")
+    btc_data = fetch_orderbook_bitpin(api_url_btc_usdt_bitpin, "BTC_USDT")
+    eth_data = fetch_orderbook_bitpin(api_url_eth_usdt_bitpin, "ETH_USDT")
     return btc_data, eth_data
 
 
