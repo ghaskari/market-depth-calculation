@@ -2,7 +2,6 @@ import time
 import requests
 import pandas as pd
 from datetime import datetime
-import os
 import concurrent.futures
 
 name_exchange = "CoinEx"
@@ -27,12 +26,7 @@ def fetch_market_depth(symbol):
 def save_data(data, name_exchange, symbol):
     today_date = datetime.today().strftime('%Y-%m-%d')
     filename = f'order_book_data/{name_exchange.lower()}/order_book_{name_exchange.lower()}_{symbol}_{today_date}.csv'
-
-
-    existing_data = pd.read_csv(filename)
-    combined_data = pd.concat([existing_data, data], ignore_index=True)
-
-    combined_data.to_csv(filename, index=False)
+    data.to_csv(filename, index=False)
 
 
 def process_order_book_data(symbol, order_book_data):

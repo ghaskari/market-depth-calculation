@@ -2,7 +2,6 @@ import pandas as pd
 import time
 import datetime
 import requests
-import os
 
 URL_ORDERBOOK_BTCUSDT_WALLEX = 'https://api.wallex.ir/v1/depth?symbol=BTCUSDT'
 URL_ORDERBOOK_ETHUSDT_WALLEX = 'https://api.wallex.ir/v1/depth?symbol=ETHUSDT'
@@ -11,18 +10,13 @@ URL_ORDERBOOK_wallex_ALL = "https://api.wallex.ir/v2/depth/all"
 LIST_COLUMN_NAME_INTERCEPT = ['Item', 'Date', 'DateTime', 'Timestamp']
 output_dir = 'order_book_data/wallex/'
 
-def save_orderbook_files(df, filename, save_csv=True, save_json=False):
+def save_orderbook_files(df, filename):
 
     output_dir = 'order_book_data/wallex/'
-    os.makedirs(output_dir, exist_ok=True)
 
-    if save_csv:
-        csv_filepath = os.path.join(output_dir, f'wallex_orderbook_{filename}.csv')
-        df.to_csv(csv_filepath, index=False)
+    csv_filepath = (f'{output_dir}wallex_orderbook_{filename}.csv')
+    df.to_csv(csv_filepath, index=False)
 
-    if save_json:
-        json_filepath = os.path.join(output_dir, f'wallex_orderbook_{filename}.json')
-        df.to_json(json_filepath, orient='records', lines=True)
 
 
 def fetch_market_depth_url(url):
@@ -150,8 +144,8 @@ def calculate_depth_with_percentages(df, percentages=[0, 2, 5, 10], group_column
                        ]
 
         depth_df = df_with_bounds.groupby(key_columns).agg(
-            Bid_Depth=('Bid_Quantity', 'sum'),
-            Ask_Depth=('Ask_Quantity', 'sum'),
+            Total_Bid_Volume=('Bid_Quantity', 'sum'),
+            Total_Ask_Volume=('Ask_Quantity', 'sum'),
         ).reset_index()
 
         depth_df['Percentage'] = percentage
@@ -241,7 +235,7 @@ if __name__ == "__main__":
     df_depth_all = pd.DataFrame(columns=['Item',
                                          'Date', 'DateTime', 'Timestamp',
                                          'Reference_Price',
-                                         'Bid_Depth', 'Ask_Depth',
+                                         'Total_Bid_Volume', 'Total_Ask_Volume',
                                          'Percentage'
                                          ])
 

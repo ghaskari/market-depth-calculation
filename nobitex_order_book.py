@@ -18,19 +18,6 @@ def fetch_market_depth_url(url):
         return {}
 
 
-def convert_to_tehran_time(timestamp_ms):
-    tehran_timezone = pytz.timezone('Asia/Tehran')
-    datetime_utc = pd.to_datetime(timestamp_ms, unit='ms').tz_localize('UTC')
-    datetime_tehran = datetime_utc.tz_convert(tehran_timezone)
-    return datetime_tehran
-
-
-def data_separate(df, split_sign, column_name):
-    df['CoinName'] = df[column_name].str.split(split_sign).str.get(0)
-    df['Currency'] = df[column_name].str.split(split_sign).str.get(1)
-    return df
-
-
 def extract_ask_bid(data):
     rows = []
     last_update = []
@@ -41,7 +28,7 @@ def extract_ask_bid(data):
             row = {
                 'Item': key,
                 'Timestamp': value['lastUpdate'],
-                'LastTradePrice': value['lastTradePrice'],
+                'Reference_Price': value['lastTradePrice'],
                 'Bid_Price': float(bid[0]),
                 'Bid_Volume': float(bid[1]),
                 'Ask_Price': float(ask[0]),
@@ -53,10 +40,8 @@ def extract_ask_bid(data):
 
 
 def dataset_preparation(result_df):
-    # Fill missing values
     result_df.fillna({'Bid_Price': 0, 'Bid_Volume': 0, 'Ask_Price': 0, 'Ask_Volume': 0, 'LastTradePrice': 0},
                      inplace=True)
-    result_df['Reference_Price'] = result_df['LastTradePrice'].astype(float)
     result_df['DateTime'] = pd.to_datetime(result_df['Timestamp'], unit='ms')
     result_df['FormattedDateTime'] = result_df['DateTime'].dt.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
     result_df['Date'] = result_df['DateTime'].dt.date
@@ -81,8 +66,8 @@ def calculate_depth_with_percentages(df, percentages=[0, 2, 5, 10]):
 
     def calculate_depth(percentage):
         depth_df = df.groupby(ALTERNATE_COLUMN_NAME_INTERCEPT).agg(
-            Bid_Depth=('Bid_Volume', 'sum'),
-            Ask_Depth=('Ask_Volume', 'sum'),
+            Total_Bid_Volume=('Bid_Volume', 'sum'),
+            Total_Ask_Volume=('Ask_Volume', 'sum'),
         ).reset_index()
 
         depth_df['Percentage'] = percentage

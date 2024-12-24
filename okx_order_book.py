@@ -27,7 +27,7 @@ def save_data(data, name_exchange, symbol):
     today_date = datetime.today().strftime('%Y-%m-%d')
     filename = f'order_book_data/{name_exchange.lower()}/order_book_{name_exchange.lower()}_{symbol}_{today_date}.csv'
 
-    data.to_csv(filename, mode='a', header=False, index=False)
+    data.to_csv(filename, index=False)
 
 
 def process_order_book_data(symbol, order_book_data):
@@ -71,6 +71,8 @@ def process_order_book_data(symbol, order_book_data):
 
         reference_price = pd.Series(all_prices).median()
         iteration_data["Reference_Price"] = reference_price
+
+        iteration_data.drop_duplicates(subset=["Timestamp", "Item"], inplace=True)
 
         save_data(iteration_data, name_exchange, symbol)
 
