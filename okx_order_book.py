@@ -5,7 +5,12 @@ import time
 import concurrent.futures
 from datetime import datetime
 
-# URL to token mapping
+# Proxy configuration
+proxies = {
+    'http': 'socks5://127.0.0.1:2080',
+    'https': 'socks5://127.0.0.1:2080',
+}
+
 url_token_mapping = {
     'BTC-USDT': 'https://www.okx.com/api/v5/market/books?instId=BTC-USDT&sz=10',
     'ETH-USDT': 'https://www.okx.com/api/v5/market/books?instId=ETH-USDT&sz=10'
@@ -15,7 +20,7 @@ LIST_COLUMN_NAME_INTERCEPT = ['timestamp', 'DateTime', 'Date', 'Item', 'Coins', 
 
 
 def save_csv_orderbook(df, filename):
-    df.to_csv(f'OrderBookDataInternational/okx/okx_orderbook_{filename}.csv', index=False)
+    df.to_csv(f'order_book_data/okx/okx_orderbook_{filename}.csv', index=False)
 
 
 def convert_to_tehran_time(timestamp_ms):
@@ -33,7 +38,7 @@ def data_separate(df, split_sign, column_name):
 
 def fetch_market_depth_url(url):
     try:
-        response = requests.get(url)
+        response = requests.get(url, proxies=proxies)  # Add proxies here
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
@@ -43,25 +48,20 @@ def fetch_market_depth_url(url):
 
 def extract_ask_bid(data):
     try:
-        # Ensure the "data" field exists and contains valid data
         if not data or "data" not in data or not data["data"]:
             print("Invalid data format or empty response.")
             return pd.DataFrame(), None
 
-        # Extract the first dataset from the response
         order_data = data["data"][0]
 
-        # Extract price and quantity only from asks and bids
         asks = [(float(ask[0]), float(ask[1]), 'ask') for ask in order_data["asks"]]
         bids = [(float(bid[0]), float(bid[1]), 'bid') for bid in order_data["bids"]]
 
-        # Combine into a single DataFrame
         combined_data = asks + bids
         order_book_df = pd.DataFrame(combined_data, columns=['Price', 'Quantity', 'Type'])
 
-        # Add metadata
-        timestamp = int(order_data["ts"])  # Extract timestamp from response
-        order_book_df["timestamp"] = timestamp
+        timestamp = int(order_data["ts"])  #
+        order_book_df["Timestamp"] = timestamp
         order_book_df["DateTime"] = datetime.utcfromtimestamp(timestamp / 1000).isoformat()
         order_book_df["Date"] = order_book_df["DateTime"].str.split("T").str.get(0)
 
@@ -81,10 +81,13 @@ def calculate_spread_okx(df):
     lowest_sell_price = sell_df['Price'].min()
     spread = lowest_sell_price - highest_buy_price
 
-    df['BestBuy'] = highest_buy_price
-    df['BestSell'] = lowest_sell_price
+    df['Best_Bid_Price'] = highest_buy_price
+    df['Best_Ask_Price'] = lowest_sell_price
     df['Spread'] = spread
+    df['Reference_Price'] = (df['Best_Bid_Price'] + df['Best_Ask_Price']) / 2
+
     return df
+
 
 def calculate_depth_percent_okx(df, percentages=[0, 2, 5, 10]):
     if df.empty:
@@ -112,15 +115,15 @@ if __name__ == "__main__":
 
                 if not df.empty:
                     df['Item'] = token
-                    df['Coins'] = f"{token.split('-')[0]}_USDT"
-                    df = data_separate(df, '_', 'Coins')
+                    # df['Coins'] = f"{token.split('-')[0]}_USDT"
+                    # df = data_separate(df, '_', 'Coins')
                     df = calculate_spread_okx(df)
                     df_all_okx_orderbook = pd.concat([df_all_okx_orderbook, df], axis=0)
 
                     # save_csv_orderbook(df, f'total_orderbook_okx_{token}_{df["Date"].iloc[0]}_{last_update}')
 
-                    spread_df = df[['Item', 'Coins', 'CoinName', 'Currency', 'timestamp', 'DateTime', 'Date', 'BestBuy',
-                                    'BestSell', 'Spread']].iloc[0:1, :]
+                    spread_df = df[['Item', 'Coins', 'CoinName', 'Currency', 'timestamp', 'DateTime', 'Date',
+                                    'Best_Bid_Price', 'Best_Ask_Price', 'Spread']].iloc[0:1, :]
                     save_csv_orderbook(spread_df,
                                        f'spread_okx_{token}_{spread_df["Date"].iloc[0]}')
 

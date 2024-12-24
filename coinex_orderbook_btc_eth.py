@@ -4,17 +4,18 @@ import requests
 import time
 import concurrent.futures
 
-# Dictionary of token names and URLs
 url_token_mapping = {
     'BTCUSDT': 'https://api.coinex.com/v1/market/depth?market=btcusdt&merge=0',
     'ETHUSDT': 'https://api.coinex.com/v1/market/depth?market=ethusdt&merge=0'
 }
 
-LIST_COLUMN_NAME_INTERCEPT = ['timestamp', 'DateTime', 'Date', 'Item', 'Coins', 'CoinName', 'Currency']
+LIST_COLUMN_NAME_INTERCEPT = ['Timestamp', 'DateTime', 'Date', 'Item',
+                              # 'Coins', 'CoinName', 'Currency'
+                              ]
 
 
 def save_csv_orderbook(df, filename):
-    df.to_csv(f'OrderBookDataInternational/coinex/coinex_orderbook_{filename}.csv', index=False)
+    df.to_csv(f'order_book_data/coinex/coinex_orderbook_{filename}.csv', index=False)
 
 
 def convert_to_tehran_time(timestamp_ms):
@@ -51,9 +52,9 @@ def extract_ask_bid(data):
         combined_data = asks_with_type + bids_with_type
         order_book_df = pd.DataFrame(combined_data, columns=['price', 'quantity', 'type'])
         order_book_df['LastPrice'] = last
-        order_book_df['timestamp'] = timestamp
+        order_book_df['Timestamp'] = timestamp
         if not order_book_df.empty:
-            last_update = order_book_df['timestamp'].iloc[0]
+            last_update = order_book_df['Timestamp'].iloc[0]
             order_book_df['DateTime'] = pd.to_datetime(last_update, unit='ms')
             order_book_df['DateTime'] = order_book_df['DateTime'].apply(convert_to_tehran_time)
             order_book_df['Date'] = order_book_df['DateTime'].dt.date
@@ -64,16 +65,16 @@ def extract_ask_bid(data):
 
 def calculate_spread_coinx(df):
     df['Price'] = pd.to_numeric(df['price'])
-    df['LastPrice'] = pd.to_numeric(df['LastPrice'])
+    df['Reference_Price'] = pd.to_numeric(df['LastPrice'])
     buy_df = df[df['type'] == 'bid']
     sell_df = df[df['type'] == 'ask']
     highest_buy_price = buy_df['Price'].max()
     lowest_sell_price = sell_df['Price'].min()
     spread = lowest_sell_price - highest_buy_price
-    df['BestBuy'] = highest_buy_price
-    df['BestSell'] = lowest_sell_price
+    df['Best_Bid_Price'] = highest_buy_price
+    df['Best_Ask_Price'] = lowest_sell_price
     df['Spread'] = spread
-    df['Slippage'] = ((df['LastPrice'] - df['BestBuy']) / df['BestBuy']) * 100
+
     return df
 
 
@@ -91,14 +92,14 @@ def calculate_depth_percent_coinx(df, percentages=[0, 2, 5, 10]):
             sell_df = df[df['type'] == 'ask'].copy()
             highest_buy_price = buy_df['Price'].max()
             lowest_sell_price = sell_df['Price'].min()
-            buy_df.loc[:, 'BestBuy'] = highest_buy_price
-            sell_df.loc[:, 'BestSell'] = lowest_sell_price
-            sell_df.loc[:, 'LowerBond'] = sell_df['BestSell'] * (1 - (percentage / 100))
-            buy_df.loc[:, 'UpperBond'] = buy_df['BestBuy'] * (1 + (percentage / 100))
+            buy_df.loc[:, 'Best_Bid_Price'] = highest_buy_price
+            sell_df.loc[:, 'Best_Ask_Price'] = lowest_sell_price
+            sell_df.loc[:, 'LowerBond'] = sell_df['Best_Ask_Price'] * (1 - (percentage / 100))
+            buy_df.loc[:, 'UpperBond'] = buy_df['Best_Bid_Price'] * (1 + (percentage / 100))
             df_filtered_buy = buy_df[(buy_df['Price'] <= buy_df['UpperBond'])]
             df_filtered_sell = sell_df[(sell_df['Price'] >= sell_df['LowerBond'])]
             depth_df = df_filtered_buy.merge(df_filtered_sell, how='outer')
-            depth_df['VolumeTotal'] = depth_df['quantity'].sum()
+            depth_df['Volume_Total'] = depth_df['quantity'].sum()
             depth_df['Percentage'] = percentage
 
             return depth_df
@@ -121,17 +122,22 @@ if __name__ == "__main__":
                     continue
                 df, last_update = extract_ask_bid(data)
                 print(token)
-                if not df.empty or df['timestamp'].notna().any():
+                if not df.empty or df['Timestamp'].notna().any():
                     df['Item'] = token
-                    df['Coins'] = f"{token.split('USDT')[0]}_USDT"
-                    data_separate(df, '_', 'Coins')
+                    # df['Coins'] = f"{token.split('USDT')[0]}_USDT"
+                    # data_separate(df, '_', 'Coins')
                     df = calculate_spread_coinx(df)
                     df_all_coinex_orderbook = pd.concat([df_all_coinex_orderbook, df], axis=0)
 
                     # save_csv_orderbook(df, f'total_orderbook_coinex_{token}_{df["Date"].iloc[0]}_{df["timestamp"].iloc[0]}')
 
-                    spread_df = df[['Item', 'Coins', 'CoinName', 'Currency', 'timestamp', 'DateTime', 'Date', 'BestBuy',
-                                    'BestSell', 'Spread']].iloc[0:1, :]
+                    spread_df = df[['Item',
+                                    'Timestamp', 'DateTime', 'Date',
+                                    'Best_Bid_Price',
+                                    'Best_Ask_Price',
+                                    'Spread',
+                                    'Reference_Price'
+                                    ]].iloc[0:1, :]
                     # save_csv_orderbook(spread_df,
                     #                    f'spread_coinex_{token}_{spread_df["Date"].iloc[0]}_{spread_df["timestamp"].iloc[0]}')
 
