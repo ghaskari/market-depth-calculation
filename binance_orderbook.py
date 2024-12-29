@@ -25,7 +25,6 @@ class OrderBookCollectorBinance:
             'https': 'socks5://127.0.0.1:2080',
         }
 
-
     def fetch_order_book(self, symbol):
         url = f"https://api.binance.com/api/v3/depth?limit=10&symbol={symbol}"
         try:
@@ -122,8 +121,8 @@ class OrderBookCollectorBinance:
 
                     self.data_list.append(iteration_data)
 
-                    # if now.minute == 59 and now.second >= (60 - self.interval_seconds):
-                    self.send_to_telegram()
+                    if now.minute == 59 and now.second >= (60 - self.interval_seconds):
+                        self.send_to_telegram()
 
                 time.sleep(1)
             except Exception as e:

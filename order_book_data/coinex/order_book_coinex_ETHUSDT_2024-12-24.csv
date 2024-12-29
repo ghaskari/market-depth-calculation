@@ -1,2 +1,0 @@
-Item,Timestamp,DateTime,Date,Ask_Price,Ask_Volume,Bid_Price,Bid_Volume,Total_Ask_Volume,Total_Bid_Volume,Best_Bid_Price,Best_Ask_Price,Spread,Reference_Price
-ETHUSDT,1735063646787,2024-12-24T18:07:26.787000,2024-12-24,3515.0,1.04072962,3514.99,0.61244708,25.085234820000004,24.68932952,3514.99,3515.0,0.010000000000218279,3515.0

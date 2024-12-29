@@ -112,8 +112,8 @@ class OrderBookCollectorCoinex:
                     iteration_data = self.process_order_book_data(self.symbols)
                     self.data_list.append(iteration_data)
 
-                    # if now.minute == 59 and now.second >= (60 - self.interval_seconds):
-                    self.send_to_telegram()
+                    if now.minute == 59 and now.second >= (60 - self.interval_seconds):
+                        self.send_to_telegram()
 
                 time.sleep(1)
             except Exception as e:
