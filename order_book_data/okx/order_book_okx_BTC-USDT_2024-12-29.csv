@@ -1,0 +1,2 @@
+Item,Timestamp,DateTime,Date,Ask_Price,Ask_Volume,Bid_Price,Bid_Volume,Total_Ask_Volume,Total_Bid_Volume,Best_Bid_Price,Best_Ask_Price,Spread,Reference_Price
+BTC-USDT,1735484371.712125,2024-12-29T18:29:31.712131,2024-12-29,94614.9,0.37595124,94614.8,0.0271832,2.9996017,0.1767618,94614.8,94614.9,0.09999999999126885,94614.85
