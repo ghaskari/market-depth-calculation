@@ -8,7 +8,7 @@ import time
 import io
 
 
-class OrderBookCollector:
+class OrderBookCollectorBitpin:
     def __init__(self, url, token, telegram_bot_token, telegram_chat_id, interval_seconds=15):
         self.url = url
         self.token = token
@@ -114,7 +114,7 @@ class OrderBookCollector:
                 time.sleep(1)
 
 
-class OrderBookManager:
+class OrderBookManagerBitpin:
     def __init__(self, collectors):
         self.collectors = collectors
 
@@ -136,19 +136,19 @@ if __name__ == "__main__":
     TELEGRAM_BOT_TOKEN = "7732239390:AAGuFI4pDUANbNxAbY9eT2FqzIawMZCoMA4"
     TELEGRAM_CHAT_ID = "5904776497"
 
-    btc_usdt_collector = OrderBookCollector(
+    btc_usdt_collector = OrderBookCollectorBitpin(
         url="https://api.bitpin.org/api/v1/mth/orderbook/BTC_USDT/",
         token="BTC_USDT",
         telegram_bot_token=TELEGRAM_BOT_TOKEN,
         telegram_chat_id=TELEGRAM_CHAT_ID
     )
 
-    eth_usdt_collector = OrderBookCollector(
+    eth_usdt_collector = OrderBookCollectorBitpin(
         url="https://api.bitpin.org/api/v1/mth/orderbook/ETH_USDT/",
         token="ETH_USDT",
         telegram_bot_token=TELEGRAM_BOT_TOKEN,
         telegram_chat_id=TELEGRAM_CHAT_ID
     )
 
-    manager = OrderBookManager([btc_usdt_collector, eth_usdt_collector])
+    manager = OrderBookManagerBitpin([btc_usdt_collector, eth_usdt_collector])
     manager.start()
