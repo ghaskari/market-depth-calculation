@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  international_app:
+    build:
+      context: .
+      dockerfile: Dockerfile.international
+    container_name: international_collector
+    environment:
+      - TELEGRAM_BOT_TOKEN=your-telegram-bot-token
+      - TELEGRAM_CHAT_ID=your-telegram-chat-id
+    volumes:
+      - ./order_book_data:/app/order_book_data
+    restart: always
+
+  local_app:
+    build:
+      context: .
+      dockerfile: Dockerfile.local
+    container_name: local_collector
+    environment:
+      - TELEGRAM_BOT_TOKEN=your-telegram-bot-token
+      - TELEGRAM_CHAT_ID=your-telegram-chat-id
+    volumes:
+      - ./order_book_data:/app/order_book_data
+    restart: always
