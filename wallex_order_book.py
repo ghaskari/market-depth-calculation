@@ -269,10 +269,10 @@ class OrderBookCollectorWallex:
                     if now.minute == 59 and now.second >= (60 - self.interval_seconds):
                         self.send_to_telegram()
 
-                time.sleep(1)
+                time.sleep(5)
             except Exception as e:
                 print(f"An error occurred: {e}")
-                time.sleep(1)
+                time.sleep(5)
 
 class OrderBookManagerWallex:
     def __init__(self, collectors):
@@ -303,36 +303,3 @@ if __name__ == "__main__":
 
     manager = OrderBookManagerWallex([btc_usdt_collector])
     manager.start()
-
-
-# if __name__ == "__main__":
-#     df_slippage_spread_all = pd.DataFrame(columns=['Item',
-#                                                    'Date', 'DateTime', 'Timestamp',
-#                                                    'Reference_Price',
-#                                                    'Ask_Price', 'Bid_Price', 'Spread'
-#                                                    ])
-#
-#     df_depth_all = pd.DataFrame(columns=['Item',
-#                                          'Date', 'DateTime', 'Timestamp',
-#                                          'Reference_Price',
-#                                          'Total_Bid_Volume', 'Total_Ask_Volume',
-#                                          'Percentage'
-#                                          ])
-#
-#     df_result_all = pd.DataFrame(columns=['Ask_Price', 'Ask_Volume', 'Ask_Sum', 'Item', 'Bid_Price',
-#                                           'Bid_Volume', 'Bid_Sum', 'Timestamp',
-#                                           'Reference_Price', 'DateTime', 'Date',
-#                                           ])
-#
-#     df_new_all = pd.DataFrame(columns=['Ask_Price', 'Ask_Volume', 'Ask_Sum',
-#                                        'Item',
-#                                        'Bid_Price', 'Bid_Volume', 'Bid_Sum',
-#                                        'Timestamp',
-#                                        'Reference_Price',
-#                                        'DateTime', 'Date',
-#                                        'Best_Ask_Price', 'Best_Bid_Price',
-#                                        'Spread'
-#                                        ])
-#
-#     collect_data(15, URL_ORDERBOOK_wallex_ALL, df_slippage_spread_all, df_depth_all,
-#                  df_result_all, df_new_all)

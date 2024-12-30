@@ -162,10 +162,10 @@ class OrderBookCollectorNobitex:
                     if now.minute == 59 and now.second >= (60 - self.interval_seconds):
                       self.send_to_telegram()
 
-                time.sleep(1)
+                time.sleep(5)
             except Exception as e:
                 print(f"An error occurred: {e}")
-                time.sleep(1)
+                time.sleep(5)
 
 
 class OrderBookManagerNobitex:

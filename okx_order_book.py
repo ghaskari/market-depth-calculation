@@ -143,10 +143,10 @@ class OrderBookCollectorOKX:
                     if now.minute == 59 and now.second >= (60 - self.interval_seconds):
                         self.send_to_telegram()
 
-                time.sleep(1)
+                time.sleep(5)
             except Exception as e:
                 print(f"An error occurred for {self.symbols}: {e}")
-                time.sleep(1)
+                time.sleep(5)
 
 
 class OrderBookManagerOKX:
@@ -167,30 +167,21 @@ class OrderBookManagerOKX:
             print("Data collection interrupted by user.")
 
 
-if __name__ == "__main__":
-    TELEGRAM_BOT_TOKEN = "7732239390:AAGuFI4pDUANbNxAbY9eT2FqzIawMZCoMA4"
-    TELEGRAM_CHAT_ID = "5904776497"
-
-    btc_usdt_collector = OrderBookCollectorOKX(
-        token="BTC-USDT",
-        telegram_bot_token=TELEGRAM_BOT_TOKEN,
-        telegram_chat_id=TELEGRAM_CHAT_ID
-    )
-
-    eth_usdt_collector = OrderBookCollectorOKX(
-        token="ETH-USDT",
-        telegram_bot_token=TELEGRAM_BOT_TOKEN,
-        telegram_chat_id=TELEGRAM_CHAT_ID
-    )
-
-    manager = OrderBookManagerOKX([btc_usdt_collector, eth_usdt_collector])
-    manager.start()
-
-
 # if __name__ == "__main__":
 #     TELEGRAM_BOT_TOKEN = "7732239390:AAGuFI4pDUANbNxAbY9eT2FqzIawMZCoMA4"
 #     TELEGRAM_CHAT_ID = "5904776497"
-#     try:
-#         OrderBookCollectorOKX(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID).main()
-#     except KeyboardInterrupt:
-#         print("Data fetching interrupted by user.")
+#
+#     btc_usdt_collector = OrderBookCollectorOKX(
+#         token="BTC-USDT",
+#         telegram_bot_token=TELEGRAM_BOT_TOKEN,
+#         telegram_chat_id=TELEGRAM_CHAT_ID
+#     )
+#
+#     eth_usdt_collector = OrderBookCollectorOKX(
+#         token="ETH-USDT",
+#         telegram_bot_token=TELEGRAM_BOT_TOKEN,
+#         telegram_chat_id=TELEGRAM_CHAT_ID
+#     )
+#
+#     manager = OrderBookManagerOKX([btc_usdt_collector, eth_usdt_collector])
+#     manager.start()

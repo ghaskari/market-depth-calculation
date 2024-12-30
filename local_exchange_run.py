@@ -1,57 +1,53 @@
 # Combined Script for Wallex, Nobitex, and Bitpin
 from threading import Thread
-from wallex_order_book import OrderBookCollectorWallex
-from nobitex_order_book import OrderBookCollectorNobitex
-from bitpin_orderbook import OrderBookCollectorBitpin
+from wallex_order_book import OrderBookCollectorWallex, OrderBookManagerWallex
+from nobitex_order_book import OrderBookCollectorNobitex, OrderBookManagerNobitex
+from bitpin_orderbook import OrderBookCollectorBitpin, OrderBookManagerBitpin
 
 TELEGRAM_BOT_TOKEN = "7732239390:AAGuFI4pDUANbNxAbY9eT2FqzIawMZCoMA4"
 TELEGRAM_CHAT_ID = "5904776497"
 
-# Initialize Wallex collectors
-wallex_collector = OrderBookCollectorWallex(
-    telegram_bot_token=TELEGRAM_BOT_TOKEN,
-    telegram_chat_id=TELEGRAM_CHAT_ID
-)
+def run_bitpin():
 
-# Initialize Nobitex collectors
-nobitex_collector = OrderBookCollectorNobitex(
-    telegram_bot_token=TELEGRAM_BOT_TOKEN,
-    telegram_chat_id=TELEGRAM_CHAT_ID
-)
+    btc_usdt_collector = OrderBookCollectorBitpin(
+        url="https://api.bitpin.org/api/v1/mth/orderbook/BTC_USDT/",
+        token="BTC_USDT",
+        telegram_bot_token=TELEGRAM_BOT_TOKEN,
+        telegram_chat_id=TELEGRAM_CHAT_ID
+    )
 
-# Initialize Bitpin collectors
-bitpin_btc_collector = OrderBookCollectorBitpin(
-    url="https://api.bitpin.org/api/v1/mth/orderbook/BTC_USDT/",
-    token="BTC_USDT",
-    telegram_bot_token=TELEGRAM_BOT_TOKEN,
-    telegram_chat_id=TELEGRAM_CHAT_ID
-)
+    eth_usdt_collector = OrderBookCollectorBitpin(
+        url="https://api.bitpin.org/api/v1/mth/orderbook/ETH_USDT/",
+        token="ETH_USDT",
+        telegram_bot_token=TELEGRAM_BOT_TOKEN,
+        telegram_chat_id=TELEGRAM_CHAT_ID
+    )
 
-bitpin_eth_collector = OrderBookCollectorBitpin(
-    url="https://api.bitpin.org/api/v1/mth/orderbook/ETH_USDT/",
-    token="ETH_USDT",
-    telegram_bot_token=TELEGRAM_BOT_TOKEN,
-    telegram_chat_id=TELEGRAM_CHAT_ID
-)
+    manager = OrderBookManagerBitpin([btc_usdt_collector, eth_usdt_collector])
+    manager.start()
 
-# Combine all collectors
-all_collectors = [
-    wallex_collector,
-    nobitex_collector,
-    bitpin_btc_collector,
-    bitpin_eth_collector
-]
+def run_nobitex():
+    btc_usdt_collector = OrderBookCollectorNobitex(
+        telegram_bot_token=TELEGRAM_BOT_TOKEN,
+        telegram_chat_id=TELEGRAM_CHAT_ID
+    )
 
-# Start all collectors in threads
-def start_collectors(collectors):
-    threads = []
-    for collector in collectors:
-        thread = Thread(target=collector.start)
-        threads.append(thread)
-        thread.start()
+    manager = OrderBookManagerNobitex([btc_usdt_collector])
+    manager.start()
 
-    for thread in threads:
-        thread.join()
+def run_wallex():
+    btc_usdt_collector = OrderBookCollectorWallex(
+        telegram_bot_token=TELEGRAM_BOT_TOKEN,
+        telegram_chat_id=TELEGRAM_CHAT_ID
+    )
 
-if __name__ == "__main__":
-    start_collectors(all_collectors)
+    manager = OrderBookManagerWallex([btc_usdt_collector])
+    manager.start()
+
+def main():
+    run_nobitex()
+    run_bitpin()
+    run_wallex()
+
+if __name__ == '__main__':
+    main()
