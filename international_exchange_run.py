@@ -2,12 +2,20 @@ from threading import Thread
 from datetime import datetime
 import pytz
 import time
+import os
 from binance_orderbook import OrderBookCollectorBinance, OrderBookManagerBinance
 from coinex_orderbook_btc_eth import OrderBookCollectorCoinex, OrderBookManagerCoinex
 from okx_order_book import OrderBookCollectorOKX, OrderBookManagerOKX
 
-TELEGRAM_BOT_TOKEN = "7732239390:AAGuFI4pDUANbNxAbY9eT2FqzIawMZCoMA4"
-TELEGRAM_CHAT_ID = "5904776497"
+
+# Load environment variables
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+
+# Ensure the variables are set
+if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+    raise ValueError("TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is not set in the environment variables.")
+
 
 # Binance Collectors
 binance_btc_collector = OrderBookCollectorBinance(

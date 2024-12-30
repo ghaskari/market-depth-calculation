@@ -132,23 +132,23 @@ class OrderBookManagerBitpin:
             print("Data collection interrupted by user.")
 
 
-if __name__ == "__main__":
-    TELEGRAM_BOT_TOKEN = "7732239390:AAGuFI4pDUANbNxAbY9eT2FqzIawMZCoMA4"
-    TELEGRAM_CHAT_ID = "5904776497"
-
-    btc_usdt_collector = OrderBookCollectorBitpin(
-        url="https://api.bitpin.org/api/v1/mth/orderbook/BTC_USDT/",
-        token="BTC_USDT",
-        telegram_bot_token=TELEGRAM_BOT_TOKEN,
-        telegram_chat_id=TELEGRAM_CHAT_ID
-    )
-
-    eth_usdt_collector = OrderBookCollectorBitpin(
-        url="https://api.bitpin.org/api/v1/mth/orderbook/ETH_USDT/",
-        token="ETH_USDT",
-        telegram_bot_token=TELEGRAM_BOT_TOKEN,
-        telegram_chat_id=TELEGRAM_CHAT_ID
-    )
-
-    manager = OrderBookManagerBitpin([btc_usdt_collector, eth_usdt_collector])
-    manager.start()
+# if __name__ == "__main__":
+#     TELEGRAM_BOT_TOKEN = "7732239390:AAGuFI4pDUANbNxAbY9eT2FqzIawMZCoMA4"
+#     TELEGRAM_CHAT_ID = "5904776497"
+#
+#     btc_usdt_collector = OrderBookCollectorBitpin(
+#         url="https://api.bitpin.org/api/v1/mth/orderbook/BTC_USDT/",
+#         token="BTC_USDT",
+#         telegram_bot_token=TELEGRAM_BOT_TOKEN,
+#         telegram_chat_id=TELEGRAM_CHAT_ID
+#     )
+#
+#     eth_usdt_collector = OrderBookCollectorBitpin(
+#         url="https://api.bitpin.org/api/v1/mth/orderbook/ETH_USDT/",
+#         token="ETH_USDT",
+#         telegram_bot_token=TELEGRAM_BOT_TOKEN,
+#         telegram_chat_id=TELEGRAM_CHAT_ID
+#     )
+#
+#     manager = OrderBookManagerBitpin([btc_usdt_collector, eth_usdt_collector])
+#     manager.start()

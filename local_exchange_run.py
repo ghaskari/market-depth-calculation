@@ -4,8 +4,16 @@ from wallex_order_book import OrderBookCollectorWallex, OrderBookManagerWallex
 from nobitex_order_book import OrderBookCollectorNobitex, OrderBookManagerNobitex
 from bitpin_orderbook import OrderBookCollectorBitpin, OrderBookManagerBitpin
 
-TELEGRAM_BOT_TOKEN = "7732239390:AAGuFI4pDUANbNxAbY9eT2FqzIawMZCoMA4"
-TELEGRAM_CHAT_ID = "5904776497"
+import os
+
+# Load environment variables
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+
+# Ensure the variables are set
+if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+    raise ValueError("TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is not set in the environment variables.")
+
 
 def run_bitpin():
 

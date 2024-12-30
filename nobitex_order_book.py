@@ -185,14 +185,14 @@ class OrderBookManagerNobitex:
         except KeyboardInterrupt:
             print("Data collection interrupted by user.")
 
-if __name__ == "__main__":
-    TELEGRAM_BOT_TOKEN = "7732239390:AAGuFI4pDUANbNxAbY9eT2FqzIawMZCoMA4"
-    TELEGRAM_CHAT_ID = "5904776497"
-
-    btc_usdt_collector = OrderBookCollectorNobitex(
-        telegram_bot_token=TELEGRAM_BOT_TOKEN,
-        telegram_chat_id=TELEGRAM_CHAT_ID
-    )
-
-    manager = OrderBookManagerNobitex([btc_usdt_collector])
-    manager.start()
+# if __name__ == "__main__":
+#     TELEGRAM_BOT_TOKEN = "7732239390:AAGuFI4pDUANbNxAbY9eT2FqzIawMZCoMA4"
+#     TELEGRAM_CHAT_ID = "5904776497"
+#
+#     btc_usdt_collector = OrderBookCollectorNobitex(
+#         telegram_bot_token=TELEGRAM_BOT_TOKEN,
+#         telegram_chat_id=TELEGRAM_CHAT_ID
+#     )
+#
+#     manager = OrderBookManagerNobitex([btc_usdt_collector])
+#     manager.start()
