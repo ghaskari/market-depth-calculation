@@ -1,9 +1,9 @@
-pandas==2.2.3
 requests==2.31.0
+pandas==2.2.3
 pytz==2023.3
 openpyxl==3.1.2
-ccxt==4.4.25
 pysocks==1.7.1
 aiohttp==3.10.10
 unicorn-binance-local-depth-cache==2.1.0
 python-telegram-bot==13.14
+python-dotenv==1.0.1

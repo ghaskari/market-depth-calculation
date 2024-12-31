@@ -269,10 +269,10 @@ class OrderBookCollectorWallex:
                     if now.minute == 59 and now.second >= (60 - self.interval_seconds):
                         self.send_to_telegram()
 
-                time.sleep(5)
+                time.sleep(1)
             except Exception as e:
                 print(f"An error occurred: {e}")
-                time.sleep(5)
+                time.sleep(1)
 
 class OrderBookManagerWallex:
     def __init__(self, collectors):

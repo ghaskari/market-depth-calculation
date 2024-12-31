@@ -55,8 +55,9 @@ class OrderBookCollectorOKX:
 
             spread = best_sell - best_buy
 
-            timestamp = datetime.now().timestamp()
-            datetime_str = datetime.now().isoformat()
+            data_entry = order_book_data['data'][0]
+            timestamp = int(data_entry['ts'])
+            datetime_str = datetime.utcfromtimestamp(timestamp / 1000).isoformat()
             date_str = datetime_str.split("T")[0]
 
             total_ask_volume = sum(float(a[1]) for a in order_data["asks"] if a[1])
@@ -102,7 +103,7 @@ class OrderBookCollectorOKX:
                         symbol, order_book_data = future.result()
                         self.process_order_book_data(symbol)
                     except Exception as e:
-                        print(f"An error occurred for {symbol}: {e}")
+                        print(f"An error occurred for main {symbol}: {e}")
 
             time.sleep(15)
 
@@ -143,10 +144,10 @@ class OrderBookCollectorOKX:
                     if now.minute == 59 and now.second >= (60 - self.interval_seconds):
                         self.send_to_telegram()
 
-                time.sleep(5)
+                time.sleep(1)
             except Exception as e:
                 print(f"An error occurred for {self.symbols}: {e}")
-                time.sleep(5)
+                time.sleep(1)
 
 
 class OrderBookManagerOKX:

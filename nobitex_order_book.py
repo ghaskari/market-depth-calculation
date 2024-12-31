@@ -9,7 +9,7 @@ import io
 
 
 class OrderBookCollectorNobitex:
-    def __init__(self, telegram_bot_token, telegram_chat_id, interval_seconds=15):
+    def __init__(self, telegram_bot_token, telegram_chat_id, interval_seconds=10):
         self.URL_ORDERBOOK_BTCUSDT_NOBITEX = 'https://api.nobitex.ir/v3/orderbook/BTCUSDT'
         self.URL_ORDERBOOK_ETHUSDT_NOBITEX = 'https://api.nobitex.ir/v3/orderbook/ETHUSDT'
         self.URL_ORDERBOOK_NOBITEX_ALL = "https://api.nobitex.ir/v3/orderbook/all"
@@ -160,12 +160,12 @@ class OrderBookCollectorNobitex:
                     self.data_list_depth.append(df_depth_all)
 
                     if now.minute == 59 and now.second >= (60 - self.interval_seconds):
-                      self.send_to_telegram()
+                        self.send_to_telegram()
 
-                time.sleep(5)
+                time.sleep(1)
             except Exception as e:
                 print(f"An error occurred: {e}")
-                time.sleep(5)
+                time.sleep(1)
 
 
 class OrderBookManagerNobitex:

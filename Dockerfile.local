@@ -1,5 +1,5 @@
 # Use an official Python runtime as a base image
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 # Set the working directory in the container
 WORKDIR /app
@@ -10,9 +10,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the source code into the container
 COPY . /app/
-
-# Expose a port if needed (e.g., for debugging or monitoring)
-EXPOSE 8000
 
 # Set the default command for the local runner
 CMD ["python", "local_exchange_run.py"]

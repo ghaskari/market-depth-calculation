@@ -6,7 +6,6 @@ import pandas as pd
 from telegram import Bot
 import time
 import io
-import concurrent.futures
 
 
 class OrderBookCollectorCoinex:
@@ -115,10 +114,10 @@ class OrderBookCollectorCoinex:
                     if now.minute == 59 and now.second >= (60 - self.interval_seconds):
                         self.send_to_telegram()
 
-                time.sleep(5)
+                time.sleep(1)
             except Exception as e:
                 print(f"An error occurred for {self.symbols}: {e}")
-                time.sleep(5)
+                time.sleep(1)
 
 class OrderBookManagerCoinex:
     def __init__(self, collectors):
