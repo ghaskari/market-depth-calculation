@@ -145,23 +145,3 @@ class OrderBookManagerBinance:
                 thread.join()
         except KeyboardInterrupt:
             print("Data collection interrupted by user.")
-
-
-# if __name__ == "__main__":
-#     TELEGRAM_BOT_TOKEN = "7732239390:AAGuFI4pDUANbNxAbY9eT2FqzIawMZCoMA4"
-#     TELEGRAM_CHAT_ID = "5904776497"
-#
-#     btc_usdt_collector = OrderBookCollectorBinance(
-#         token="BTCUSDT",
-#         telegram_bot_token=TELEGRAM_BOT_TOKEN,
-#         telegram_chat_id=TELEGRAM_CHAT_ID
-#     )
-#
-#     eth_usdt_collector = OrderBookCollectorBinance(
-#         token="ETHUSDT",
-#         telegram_bot_token=TELEGRAM_BOT_TOKEN,
-#         telegram_chat_id=TELEGRAM_CHAT_ID
-#     )
-#
-#     manager = OrderBookManagerBinance([btc_usdt_collector, eth_usdt_collector])
-#     manager.start()
